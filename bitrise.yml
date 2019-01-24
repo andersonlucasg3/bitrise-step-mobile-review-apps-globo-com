@@ -50,7 +50,6 @@ workflows:
             #!/bin/bash
             echo "No outputs generated in this step"
 
-
   # ----------------------------------------------------------------
   # --- workflows to Share this step into a Step Library
   audit-this-step:
