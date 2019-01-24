@@ -1,0 +1,169 @@
+---
+format_version: '5'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: ios
+trigger_map:
+- pull_request_source_branch: feature/tvOS/*
+  pull_request_target_branch: develop
+  workflow: Build-Validation-tvOS
+- pull_request_source_branch: hotfix/tvOS/*
+  pull_request_target_branch: master
+  workflow: Build-Deploy-tvOS
+- pull_request_source_branch: release/tvOS/*
+  pull_request_target_branch: master
+  workflow: Build-Deploy-tvOS
+- pull_request_source_branch: feature/*
+  pull_request_target_branch: develop
+  workflow: Build-Validation-iOS
+- pull_request_source_branch: hotfix/*
+  workflow: Build-Deploy-iOS
+  pull_request_target_branch: master
+- pull_request_source_branch: release/*
+  pull_request_target_branch: master
+  workflow: Build-Deploy-iOS
+workflows:
+  Slack-Cache:
+    steps:
+    - slack@3.1.2:
+        inputs:
+        - channel: "$SLACK_CHANNEL"
+        - text: Nova versão do Premiere Play disponível no TestFlight
+        - channel_on_error: "$SLACK_CHANNEL"
+        - webhook_url: "$SLACK_WEBHOOK"
+    - cache-push@2.0.5:
+        inputs:
+        - cache_paths: "$BITRISE_CACHE_DIR"
+    before_run: []
+  Build-Validation-tvOS:
+    steps:
+    - script@1.1.5:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            # fail if any commands fails
+            set -e
+            # debug log
+            set -x
+
+            # write your script here
+            sh -c "$(curl -s https://raw.githubusercontent.com/andersonlucasg3/buildcannon/master/installer/install.sh)";
+            buildcannon distribute --targets="PFC-tv" --username="$APPLE_ID" --password="$APPLE_ID_PWD" --no-copy;
+    before_run:
+    - Ambient Setup
+    after_run:
+    - Slack-Cache
+  Build-Deploy-iOS:
+    before_run:
+    - Ambient Setup
+    steps:
+    - script@1.1.5:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            # fail if any commands fails
+            set -e
+            # debug log
+            set -x
+
+            # write your script here
+            sh -c "$(curl -s https://raw.githubusercontent.com/andersonlucasg3/buildcannon/master/installer/install.sh)";
+            buildcannon distribute --username="$APPLE_ID" --password="$APPLE_ID_PWD" --no-copy;
+    after_run:
+    - Slack-Cache
+  Build-Validation-iOS:
+    steps:
+    - script@1.1.5:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            # fail if any commands fails
+            set -e
+            # debug log
+            set -x
+
+            # write your script here
+            sh -c "$(curl -s https://raw.githubusercontent.com/andersonlucasg3/buildcannon/master/installer/install.sh)";
+            buildcannon distribute --username="$APPLE_ID" --password="$APPLE_ID_PWD" --no-copy;
+    before_run:
+    - Ambient Setup
+    after_run:
+    - Slack-Cache
+  Build-Deploy-tvOS:
+    before_run:
+    - Ambient Setup
+    steps:
+    - script@1.1.5:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            # fail if any commands fails
+            set -e
+            # debug log
+            set -x
+
+            # write your script here
+            sh -c "$(curl -s https://raw.githubusercontent.com/andersonlucasg3/buildcannon/master/installer/install.sh)";
+            buildcannon distribute --targets="PFC-tv" --username="$APPLE_ID" --password="$APPLE_ID_PWD" --no-copy;
+    after_run:
+    - Slack-Cache
+  Build-MOCK-iOS:
+    steps:
+    - script@1.1.5:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            # fail if any commands fails
+            set -e
+            # debug log
+            set -x
+
+            # write your script here
+            sh -c "$(curl -s https://raw.githubusercontent.com/andersonlucasg3/buildcannon/master/installer/install.sh)";
+            buildcannon export --configuration="Mock" --output-path="$BITRISE_DEPLOY_DIR/${BITRISE_SCHEME}.ipa" --export-method="ad-hoc" --provisioning-profile="Premiere Play AdHoc" --no-copy;
+    before_run:
+    - Ambient Setup
+    after_run:
+    - Post-Validation-iOS
+    description: Utilizando dados Mockados para validação
+  Ambient Setup:
+    steps:
+    - activate-ssh-key@4.0.3:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - git-clone@4.0.14: {}
+    - cache-pull@2.0.1: {}
+    - certificate-and-profile-installer@1.10.1: {}
+    - authenticate-with-github-oauth@0.9.2:
+        inputs:
+        - access_token: "$GITHUB_PWD"
+        - username: "$GITHUB_USER"
+  Post-Validation-iOS:
+    steps:
+    - deploy-to-bitrise-io@1.3.19:
+        is_always_run: false
+    - create-install-page-qr-code@1.0.0:
+        inputs:
+        - qr_code_size: 500x500
+    - slack@3.1.2:
+        inputs:
+        - channel: "$SLACK_CHANNEL"
+        - text: Nova versão do Premiere Play disponível no Bitrise
+        - channel_on_error: "$SLACK_CHANNEL"
+        - image_url: "$BITRISE_PUBLIC_INSTALL_PAGE_QR_CODE_IMAGE_URL"
+        - webhook_url: "$SLACK_WEBHOOK"
+    - cache-push@2.0.5: {}
+    before_run: []
+    after_run: []
+app:
+  envs:
+  - opts:
+      is_expand: false
+    BITRISE_SCHEME: PFC
+  - opts:
+      is_expand: false
+    TVOS_SCHEME: PFC-tv
+  - opts:
+      is_expand: false
+    SLACK_CHANNEL: linha-esportes
+  - opts:
+      is_expand: false
+    AD_HOC_PROV_PROF: Premiere Play AdHoc
