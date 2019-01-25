@@ -95,6 +95,7 @@ func makeRequest(byteArray *bytes.Buffer, authToken string) {
 		fmt.Println("Error: ", err)
 		os.Exit(1)
 	} else if response.StatusCode != 201 {
+		fmt.Println("Request data: ", *req)
 		fmt.Println("Response Status Code: ", response.StatusCode)
 		fmt.Println("Response string: ", response.Status)
 		os.Exit(1)
