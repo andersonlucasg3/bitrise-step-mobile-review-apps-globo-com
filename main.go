@@ -83,7 +83,7 @@ func encodeJSON(object interface{}) *bytes.Buffer {
 
 func makeRequest(byteArray *bytes.Buffer, authToken string) {
 	req, err := http.NewRequest(http.MethodPost, endPoint, byteArray)
-	req.Header.Add("Authorization", fmt.Sprintf("Token %s", authToken))
+	req.Header.Add("token", authToken)
 	if err != nil {
 		fmt.Println("Failed to create new request with EndPoint: ", endPoint)
 		fmt.Println("Error: ", err)
