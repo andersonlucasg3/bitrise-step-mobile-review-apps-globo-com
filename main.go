@@ -14,7 +14,7 @@ var artifactURLKey = "artifact_url"
 var branchKey = "branch"
 var commitHashKey = "commit_hash"
 var endPointAuthTokenKey = "SERVICE_AUTH_TOKEN"
-var endPoint = "https://fake.globo.com/apps/mobile/"
+var endPoint = "http://api-simulcast.globo.com/apps/mobile/"
 
 type AppInfo struct {
 	App         string `json:"app"`
