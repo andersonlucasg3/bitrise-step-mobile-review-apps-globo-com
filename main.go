@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+
+	"github.com/gosimple/slug"
 )
 
 var appNameKey = "app_name"
@@ -17,7 +19,7 @@ var endPointAuthTokenKey = "SERVICE_AUTH_TOKEN"
 var endPoint = "http://api-simulcast.globo.com/apps/mobile/"
 
 type AppInfo struct {
-	App         string `json:"app"`
+	App         string `json:"slug"`
 	ArtifactURL string `json:"artifact_url"`
 	Branch      string `json:"branch"`
 	CommitHash  string `json:"commit_hash"`
@@ -83,7 +85,7 @@ func encodeJSON(object interface{}) *bytes.Buffer {
 
 func makeRequest(byteArray *bytes.Buffer, authToken string) {
 	req, err := http.NewRequest(http.MethodPost, endPoint, byteArray)
-	req.Header.Add("token", authToken)
+	req.Header.Add("Authorization", fmt.Sprintf("Token %s", authToken))
 	if err != nil {
 		fmt.Println("Failed to create new request with EndPoint: ", endPoint)
 		fmt.Println("Error: ", err)
@@ -117,8 +119,10 @@ func main() {
 	validateAll(appName, artifactURL, branch, commitHash)
 	validateAuthToken(authToken)
 
+	slugifiedAppName := slug.Make(appName)
+
 	jsonObject := AppInfo{
-		App:         appName,
+		App:         slugifiedAppName,
 		ArtifactURL: artifactURL,
 		Branch:      branch,
 		CommitHash:  commitHash,
